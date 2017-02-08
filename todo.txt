@@ -1,0 +1,4 @@
+- Gopher+ features
+- More character types based on file suffix
+- Dynamic Config (config file? cmdline options?)
+- Header/Footer insertion for directory views

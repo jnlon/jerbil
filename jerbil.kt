@@ -26,9 +26,30 @@ val CONF = Config()
 val suffixTable = initSuffixTable()
 
 fun initSuffixTable() : Hashtable<String, Char> { 
+
   val tbl = Hashtable<String, Char>()
-  tbl.put("txt", '1')
+  
+  val archives = arrayOf("z", "7z", "xz", "gz", "tar", "lz", 
+                         "rar", "bz2", "apk", "jar", "lzma")
+
+  val images = arrayOf("jpg", "jpeg", "png")
+
+  val audio = arrayOf("ogg", "mp3", "wav", "flac", "m4a",
+                      "opus", "aac")
+
+  for (ext in archives)
+    tbl.put(ext, '5')
+
+  for (ext in images)
+    tbl.put(ext, 'I')
+
+  for (ext in audio)
+    tbl.put(ext, 's')
+
+  tbl.put("txt", '0')
   tbl.put("html", 'h')
+  tbl.put("gif", 'g')
+
   return tbl
 }
 

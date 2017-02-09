@@ -10,6 +10,8 @@ import java.io.File
 import java.nio.file.Paths
 import java.nio.file.Path
 import java.util.Hashtable
+import kotlin.collections.Collection
+import java.util.ArrayList
 import kotlin.concurrent.thread
 
 class Config {
@@ -28,23 +30,13 @@ val suffixTable = initSuffixTable()
 fun initSuffixTable() : Hashtable<String, Char> { 
 
   val tbl = Hashtable<String, Char>()
-  
-  val archives = arrayOf("z", "7z", "xz", "gz", "tar", "lz", 
-                         "rar", "bz2", "apk", "jar", "lzma")
+  val archives = "z,7z,xz,gz,tar,lz,rar,bz2,apk,jar,lzma".split(",")
+  val images = "jpg,jpeg,png".split(",")
+  val audio = "ogg,mp3,wav,flac,m4a,opus,aac".split(",")
 
-  val images = arrayOf("jpg", "jpeg", "png")
-
-  val audio = arrayOf("ogg", "mp3", "wav", "flac", "m4a",
-                      "opus", "aac")
-
-  for (ext in archives)
-    tbl.put(ext, '5')
-
-  for (ext in images)
-    tbl.put(ext, 'I')
-
-  for (ext in audio)
-    tbl.put(ext, 's')
+  archives.forEach{tbl.put(it, '5')}
+  images.forEach{tbl.put(it, 'I')}
+  audio.forEach{tbl.put(it, 's')}
 
   tbl.put("txt", '0')
   tbl.put("html", 'h')
@@ -96,11 +88,8 @@ fun dirToMenu(dir : File) : String {
   if (!CONF.directory_menus || !dir.isDirectory())
     return notFound()
 
-  val files = dir.listFiles()
-  val buffer = StringBuffer()
-
-  files.forEach{buffer.append(fileToLine(it))}
-  val menu = buffer.toString()
+  val files = dir.listFiles().toCollection(ArrayList()).sorted()
+  val menu = files.map{fileToLine(it)}.joinToString(separator = "")
 
   println(menu)
   return menu

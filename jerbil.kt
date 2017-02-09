@@ -47,17 +47,17 @@ fun initSuffixTable() : Hashtable<String, Char> {
 
 ////// Path Related
 
-fun isPathInsideRoot(path : String) : Boolean {
-  return path.startsWith(CONF.root.toString())
+fun pathToFile(path : String) : File? {
+  val relativePath = path.trim{it == '/'}
+  val absPath = CONF.root.resolve(relativePath).normalize()
+  val inRoot = absPath.startsWith(CONF.root)
+  when { 
+    inRoot -> return File(absPath.toString())
+    else -> return null
+  }
 }
 
-fun mapPathToFile(path : String) : String {
-  val relativePath = Paths.get(path.trim{it == '/'})
-  val newpath = CONF.root.resolve(relativePath).normalize()
-  return newpath.toString()
-}
-
-fun mapFileToPath(file : File) : String {
+fun fileToPath(file : File) : String {
   val absRoot = CONF.root.toAbsolutePath().toString()
   val absFile = file.getAbsolutePath().toString()
   return absFile.substring(absRoot.length)
@@ -72,14 +72,14 @@ fun dirToMenu(dir : File) : String {
   fun getTypeChar(file : File) : Char {
     val suffix = file.getName().split(".").last().toLowerCase()
     val char = if (file.isDirectory()) '1' 
-               else {suffixTable.get(suffix) ?: '0'}
+               else suffixTable.get(suffix) ?: '0'
     return char
   }
 
   fun fileToLine(f : File) : String {
     val type = getTypeChar(f)
     val text = f.getName()
-    val path = mapFileToPath(f)
+    val path = fileToPath(f)
     val host = CONF.host
     val port = CONF.port
     return "${type}${text}\t${path}\t${host}\t${port}\r\n"
@@ -96,26 +96,23 @@ fun dirToMenu(dir : File) : String {
 }
 
 fun readPathString(reader : BufferedInputStream) : String {
-  val CR = '\r'
-  val LF = '\n'
+  val CR = '\r'.toInt()
+  val LF = '\n'.toInt()
   val path = StringBuffer(CONF.max_path)
 
-  while (true) {
-    val ch = reader.read().toChar()
-    val lastch = if (path.length > 0) path.last() else 0.toChar()
-    val isEndOfPath = (lastch == CR && ch == LF)
-    val isEOF = (ch == (-1).toChar())
-    val isTooLarge = (path.length >= CONF.max_path)
+  for (i in 0..CONF.max_path) {
 
-    when {
-      isEndOfPath || isEOF -> 
-        return path.toString().trim()
-      isTooLarge -> 
-        return String()
-      else -> 
-        path.append(ch)
-    }
+    val ch = reader.read()
+    val lastch = if (i <= 0) 0 else path.last().toInt()
+    val isEndOfPath = (lastch == CR && ch == LF)
+    val isEOF = (ch == -1)
+
+    if (isEndOfPath || isEOF)
+      return path.toString().trim()
+
+    path.append(ch.toChar())
   }
+  return String()
 }
 
 fun readFromWriteTo(from : InputStream, to : OutputStream) : Unit {
@@ -146,13 +143,14 @@ fun writeFile(writer: OutputStream, file : File) : Unit {
 fun mainIO(sock : Socket) {
   val reader = BufferedInputStream(sock.getInputStream())
   val writer = BufferedOutputStream(sock.getOutputStream())
-  val filePath = mapPathToFile(readPathString(reader))
-  val file = File(filePath)
-  val isFileInRoot = isPathInsideRoot(filePath)
+  val rawPath = readPathString(reader)
+  val file : File? = pathToFile(rawPath) // TODO: Make this Optional?
+
+  println(">>> $rawPath")
 
   try {
     when {
-      !isFileInRoot -> writeString(writer, notFound())
+      file == null -> writeString(writer, notFound()) 
       file.isDirectory() -> writeString(writer, dirToMenu(file))
       file.isFile() -> writeFile(writer, file)
       else -> writeString(writer, notFound())
@@ -160,14 +158,14 @@ fun mainIO(sock : Socket) {
     sock.close()
   }
   catch (e : SocketException) {
-    println("SocketException on write: ${sock.getInetAddress()}")
+    println("SocketException: ${sock.getInetAddress()}")
   }
 }
 
 fun main(args: Array<String>) {
   val listener = ServerSocket(CONF.port)
   println("Listening on ${CONF.port}")
-
+  
   while (true) {
     val sock = listener.accept()
     thread(block = {-> mainIO(sock)})

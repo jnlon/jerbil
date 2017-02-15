@@ -1,3 +1,7 @@
+package jerbil
+
+import jerbil.Config
+
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
@@ -9,18 +13,11 @@ import java.io.OutputStream
 import java.io.File
 import java.nio.file.Paths
 import java.nio.file.Path
-import java.util.Hashtable
 import kotlin.collections.Collection
-import java.util.ArrayList
 import kotlin.concurrent.thread
-
-class Config {
-   public val port = 8001
-   public val host = "127.0.0.1"
-   public val root = Paths.get("/home/jasp/")
-   public val max_path = 1000
-   public val directory_menus = true
-}
+import java.util.Optional
+import java.util.Hashtable
+import java.util.ArrayList
 
 ////// Init Related
 
@@ -47,13 +44,13 @@ fun initSuffixTable() : Hashtable<String, Char> {
 
 ////// Path Related
 
-fun pathToFile(path : String) : File? {
+fun pathToFile(path : String) : Optional<File> {
   val relativePath = path.trim{it == '/'}
   val absPath = CONF.root.resolve(relativePath).normalize()
   val inRoot = absPath.startsWith(CONF.root)
   when { 
-    inRoot -> return File(absPath.toString())
-    else -> return null
+    inRoot -> return Optional.of(File(absPath.toString()))
+    else -> return Optional.empty()
   }
 }
 
@@ -101,7 +98,6 @@ fun readPathString(reader : BufferedInputStream) : String {
   val path = StringBuffer(CONF.max_path)
 
   for (i in 0..CONF.max_path) {
-
     val ch = reader.read()
     val lastch = if (i <= 0) 0 else path.last().toInt()
     val isEndOfPath = (lastch == CR && ch == LF)
@@ -144,15 +140,15 @@ fun mainIO(sock : Socket) {
   val reader = BufferedInputStream(sock.getInputStream())
   val writer = BufferedOutputStream(sock.getOutputStream())
   val rawPath = readPathString(reader)
-  val file : File? = pathToFile(rawPath) // TODO: Make this Optional?
+  val file : Optional<File> = pathToFile(rawPath) // TODO: Make this Optional?
 
   println(">>> $rawPath")
 
   try {
     when {
-      file == null -> writeString(writer, notFound()) 
-      file.isDirectory() -> writeString(writer, dirToMenu(file))
-      file.isFile() -> writeFile(writer, file)
+      !file.isPresent() -> writeString(writer, notFound()) 
+      file.get().isDirectory() -> writeString(writer, dirToMenu(file.get()))
+      file.get().isFile() -> writeFile(writer, file.get())
       else -> writeString(writer, notFound())
     }
     sock.close()
@@ -164,8 +160,8 @@ fun mainIO(sock : Socket) {
 
 fun main(args: Array<String>) {
   val listener = ServerSocket(CONF.port)
-  println("Listening on ${CONF.port}")
-  
+  CONF.print()
+
   while (true) {
     val sock = listener.accept()
     thread(block = {-> mainIO(sock)})

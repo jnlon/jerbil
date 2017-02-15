@@ -21,7 +21,7 @@ import java.util.ArrayList
 
 ////// Init Related
 
-val CONF = Config()
+val CONF = Config(root = Paths.get(System.getProperty("user.home")))
 val suffixTable = initSuffixTable()
 
 fun initSuffixTable() : Hashtable<String, Char> { 
@@ -85,7 +85,7 @@ fun dirToMenu(dir : File) : String {
   if (!CONF.directory_menus || !dir.isDirectory())
     return notFound()
 
-  val files = dir.listFiles().toCollection(ArrayList()).sorted()
+  val files = dir.listFiles()?.toCollection(ArrayList())?.sorted() ?: ArrayList()
   val menu = files.map{fileToLine(it)}.joinToString(separator = "")
 
   println(menu)

@@ -1,9 +1,11 @@
-SRC = jerbil.kt
+PROJECT = jerbil
+SRC = jerbilconf.kt jerbil.kt
 MAINCLASS = JerbilKt
 OUT = $(MAINCLASS).class
 TOCLEAN = META-INF *.class
 KOTC = kotlinc-jvm
-RUNCMD = java -cp /usr/share/kotlin/lib/kotlin-runtime.jar:. $(MAINCLASS)
+CLASSPATH = /usr/share/kotlin/lib/kotlin-runtime.jar:.
+RUNCMD = java -cp $(CLASSPATH) $(PROJECT).$(MAINCLASS)
 
 all: $(OUT) ;
 

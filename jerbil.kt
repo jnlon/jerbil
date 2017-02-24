@@ -21,7 +21,7 @@ import java.util.ArrayList
 
 ////// Init Related
 
-val CONF = Config(root = Paths.get(System.getProperty("user.home")))
+var CONF = loadDefaultConfig()
 val suffixTable = initSuffixTable()
 
 fun initSuffixTable() : Hashtable<String, Char> { 
@@ -160,7 +160,10 @@ fun mainIO(sock : Socket) {
 
 fun main(args: Array<String>) {
   val listener = ServerSocket(CONF.port)
-  CONF.print()
+  val conffile = if (args.size > 1) args.get(1) else "jerbil.conf"
+  CONF = loadConfigFromFile(File(conffile))
+  println("Conffile: $conffile")
+  println(CONF.toString())
 
   while (true) {
     val sock = listener.accept()

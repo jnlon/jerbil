@@ -1,3 +1,2 @@
 - Gopher+ features
-- Dynamic Config (config file? cmdline options?)
 - Header/Footer insertion for directory views

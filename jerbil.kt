@@ -159,11 +159,12 @@ fun mainIO(sock : Socket) {
 }
 
 fun main(args: Array<String>) {
-  val listener = ServerSocket(CONF.port)
   val conffile = if (args.size > 1) args.get(1) else "jerbil.conf"
   CONF = loadConfigFromFile(File(conffile))
   println("Conffile: $conffile")
   println(CONF.toString())
+
+  val listener = ServerSocket(CONF.port)
 
   while (true) {
     val sock = listener.accept()

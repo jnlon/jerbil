@@ -22,24 +22,22 @@ import java.util.ArrayList
 ////// Init Related
 
 var CONF = loadDefaultConfig()
-val suffixTable = initSuffixTable()
 
-fun initSuffixTable() : Hashtable<String, Char> { 
+fun charTypeOfSuffix(suffix : String) : Char {
 
-  val tbl = Hashtable<String, Char>()
   val archives = "z,7z,xz,gz,tar,lz,rar,bz2,apk,jar,lzma".split(",")
   val images = "jpg,jpeg,png".split(",")
   val audio = "ogg,mp3,wav,flac,m4a,opus,aac".split(",")
 
-  archives.forEach{tbl.put(it, '5')}
-  images.forEach{tbl.put(it, 'I')}
-  audio.forEach{tbl.put(it, 's')}
-
-  tbl.put("txt", '0')
-  tbl.put("html", 'h')
-  tbl.put("gif", 'g')
-
-  return tbl
+  return when (suffix) {
+    in archives -> '5'
+    in images -> 'I'
+    in audio -> 's'
+    "txt" -> '0'
+    "html" -> 'h'
+    "gif" -> 'g'
+    else -> '9' // Assume binary file
+  }
 }
 
 ////// Path Related
@@ -48,9 +46,9 @@ fun pathToFile(path : String) : Optional<File> {
   val relativePath = path.trim{it == '/'}
   val absPath = CONF.root.resolve(relativePath).normalize()
   val inRoot = absPath.startsWith(CONF.root)
-  when { 
-    inRoot -> return Optional.of(File(absPath.toString()))
-    else -> return Optional.empty()
+  return when { 
+    inRoot -> Optional.of(File(absPath.toString()))
+    else -> Optional.empty()
   }
 }
 
@@ -67,10 +65,11 @@ fun notFound() : String = "Resource not found"
 fun dirToMenu(dir : File) : String {
 
   fun getTypeChar(file : File) : Char {
-    val suffix = file.getName().split(".").last().toLowerCase()
-    val char = if (file.isDirectory()) '1' 
-               else suffixTable.get(suffix) ?: '0'
-    return char
+    val suffix = file.extension.toLowerCase()
+    return when {
+      file.isDirectory() -> '1'
+      else -> charTypeOfSuffix(suffix)
+    }
   }
 
   fun fileToLine(f : File) : String {
@@ -137,8 +136,8 @@ fun writeFile(writer: OutputStream, file : File) : Unit {
 ////// Main 
 
 fun mainIO(sock : Socket) {
-  val reader = BufferedInputStream(sock.getInputStream())
-  val writer = BufferedOutputStream(sock.getOutputStream())
+  val reader = sock.getInputStream().buffered()
+  val writer = sock.getOutputStream().buffered()
   val rawPath = readPathString(reader)
   val file : Optional<File> = pathToFile(rawPath) // TODO: Make this Optional?
 

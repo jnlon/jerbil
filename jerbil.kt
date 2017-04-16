@@ -28,13 +28,15 @@ fun charTypeOfSuffix(suffix : String) : Char {
   val archives = "z,7z,xz,gz,tar,lz,rar,bz2,apk,jar,lzma".split(",")
   val images = "jpg,jpeg,png".split(",")
   val audio = "ogg,mp3,wav,flac,m4a,opus,aac".split(",")
+  val text = "txt,conf,csv,md,json".split(",")
+  val html = "html,xhtml".split(",")
 
-  return when (suffix) {
+  return when (suffix.toLowerCase()) {
     in archives -> '5'
     in images -> 'I'
     in audio -> 's'
-    "txt" -> '0'
-    "html" -> 'h'
+    in text -> '0'
+    in html -> 'h'
     "gif" -> 'g'
     else -> '9' // Assume binary file
   }

@@ -26,6 +26,7 @@ fun File.resolveLocalPath(path : String) : File {
   }
 }
 
+
 class GopherPath(path : String) {
   val raw = path
   val file = CONF.root.resolveLocalPath(path)
@@ -38,7 +39,8 @@ class GopherPath(path : String) {
 fun debugln(s : String) = if (CONF.debug) println(s) else Unit
 fun notFound() : String = "Resource not found\n"
 
-fun charTypeOfSuffix(suffix : String) : Char {
+fun charTypeOfFile(file : File) : Char {
+  if (file.isDirectory()) return '1'
 
   val archives = "z,7z,xz,gz,tar,lz,rar,bz2,apk,jar,lzma".split(",")
   val images = "jpg,jpeg,png".split(",")
@@ -46,7 +48,9 @@ fun charTypeOfSuffix(suffix : String) : Char {
   val text = "txt,conf,csv,md,json".split(",")
   val html = "html,xhtml".split(",")
 
-  return when (suffix.toLowerCase()) {
+  val suffix = file.extension.toLowerCase()
+
+  return when (suffix) {
     in archives -> '5'
     in images -> 'I'
     in audio -> 's'
@@ -64,21 +68,11 @@ fun File.listFilesSorted() : List<File> {
 
 fun dirToMenu(dir : File) : String {
 
-  fun fileTypeChar(file : File) : Char {
-    val suffix = file.extension.toLowerCase()
-    return when {
-      file.isDirectory() -> '1'
-      else -> charTypeOfSuffix(suffix)
-    }
-  }
-
   fun fileToLine(f : File) : String {
-    val type = fileTypeChar(f)
+    val type = charTypeOfFile(f)
     val text = f.getName()
     val path = f.relativeTo(CONF.root)
-    val host = CONF.host
-    val port = CONF.port
-    return "${type}${text}\t${path}\t${host}\t${port}\r\n"
+    return "${type}${text}\t${path}\t${CONF.host}\t${CONF.port}\r\n"
   }
 
   if (!CONF.directory_menus || !dir.isDirectory())

@@ -5,25 +5,38 @@ import jerbil.Config
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.FileInputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.File
-import java.nio.file.Paths
-import java.nio.file.Path
-import kotlin.collections.Collection
 import kotlin.concurrent.thread
-import java.util.Optional
-import java.util.Hashtable
 import java.util.ArrayList
 
-////// Init Related
+////// Config
 
 var CONF = loadDefaultConfig()
 
+////// Paths
+
+fun File.resolveLocalPath(path : String) : File {
+  val other = File(path.trim('/'))
+  val target = CONF.root.resolve(other).normalize()
+  return when {
+    target.startsWith(CONF.root) -> target
+    else -> File("")
+  }
+}
+
+class GopherPath(path : String) {
+  val raw = path
+  val file = CONF.root.resolveLocalPath(path)
+  val isFile = file.isFile()
+  val isDirectory = file.isDirectory()
+}
+
+////// IO
+
 fun debugln(s : String) = if (CONF.debug) println(s) else Unit
+fun notFound() : String = "Resource not found\n"
 
 fun charTypeOfSuffix(suffix : String) : Char {
 
@@ -44,31 +57,14 @@ fun charTypeOfSuffix(suffix : String) : Char {
   }
 }
 
-////// Path Related
-
-fun pathToFile(path : String) : Optional<File> {
-  val relativePath = path.trim{it == '/'}
-  val absPath = CONF.root.resolve(relativePath).normalize()
-  val inRoot = absPath.startsWith(CONF.root)
-  return when { 
-    inRoot -> Optional.of(File(absPath.toString()))
-    else -> Optional.empty()
-  }
+fun File.listFilesSorted() : List<File> {
+  val files = this.listFiles()?.toCollection(ArrayList()) ?: ArrayList<File>()
+  return files.sorted()
 }
-
-fun fileToPath(file : File) : String {
-  val absRoot = CONF.root.toAbsolutePath().toString()
-  val absFile = file.getAbsolutePath().toString()
-  return absFile.substring(absRoot.length)
-}
-
-////// IO Related
-
-fun notFound() : String = "Resource not found"
 
 fun dirToMenu(dir : File) : String {
 
-  fun getTypeChar(file : File) : Char {
+  fun fileTypeChar(file : File) : Char {
     val suffix = file.extension.toLowerCase()
     return when {
       file.isDirectory() -> '1'
@@ -77,9 +73,9 @@ fun dirToMenu(dir : File) : String {
   }
 
   fun fileToLine(f : File) : String {
-    val type = getTypeChar(f)
+    val type = fileTypeChar(f)
     val text = f.getName()
-    val path = fileToPath(f)
+    val path = f.relativeTo(CONF.root)
     val host = CONF.host
     val port = CONF.port
     return "${type}${text}\t${path}\t${host}\t${port}\r\n"
@@ -88,14 +84,14 @@ fun dirToMenu(dir : File) : String {
   if (!CONF.directory_menus || !dir.isDirectory())
     return notFound()
 
-  val files = dir.listFiles()?.toCollection(ArrayList())?.sorted() ?: ArrayList()
+  val files = dir.listFilesSorted()
   val menu = files.map{fileToLine(it)}.joinToString(separator = "")
 
   println(menu)
   return menu
 }
 
-fun readPathString(reader : BufferedInputStream) : String {
+fun readGopherPath(reader : InputStream) : GopherPath {
   val CR = '\r'.toInt()
   val LF = '\n'.toInt()
   val path = StringBuffer(CONF.max_path)
@@ -107,14 +103,14 @@ fun readPathString(reader : BufferedInputStream) : String {
     val isEOF = (ch == -1)
 
     if (isEndOfPath || isEOF)
-      return path.toString().trim()
+      return GopherPath(path.toString().trim())
 
     path.append(ch.toChar())
   }
-  return String()
+  return GopherPath("")
 }
 
-fun readFromWriteTo(from : InputStream, to : OutputStream) : Unit {
+fun pipeIO(from : InputStream, to : OutputStream) : Unit {
   val buf = ByteArray(2048, {0})
   loop@ while (true) {
     val r = from.read(buf)
@@ -132,27 +128,32 @@ fun writeString(writer: OutputStream, str : String) : Unit {
 }
 
 fun writeFile(writer: OutputStream, file : File) : Unit {
-  val input = FileInputStream(file)
-  readFromWriteTo(input, writer)
+  val input = file.inputStream()
+  pipeIO(input, writer)
   input.close()
 }
+
+fun writeDirMenu(writer : OutputStream, file : File) : Unit =
+  writeString(writer, dirToMenu(file))
+
+fun writeNotFound(writer : OutputStream) : Unit =
+  writeString(writer, notFound())
 
 ////// Main 
 
 fun mainIO(sock : Socket) {
   val reader = sock.getInputStream().buffered()
   val writer = sock.getOutputStream().buffered()
-  val rawPath = readPathString(reader)
-  val file : Optional<File> = pathToFile(rawPath)
+  val path = readGopherPath(reader)
 
-  println(">>> $rawPath")
+  println(">>> ${path.raw}")
+  println(">>> ${path.file}")
 
   try {
     when {
-      !file.isPresent() -> writeString(writer, notFound()) 
-      file.get().isDirectory() -> writeString(writer, dirToMenu(file.get()))
-      file.get().isFile() -> writeFile(writer, file.get())
-      else -> writeString(writer, notFound())
+      path.isDirectory -> writeDirMenu(writer, path.file)
+      path.isFile -> writeFile(writer, path.file)
+      else -> writeNotFound(writer)
     }
     sock.close()
   }

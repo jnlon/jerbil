@@ -37,7 +37,7 @@ fun loadDefaultConfig() = Config(loadDefaults())
 class Config(kv : HashMap<String, String>) {
   val port = kv.get("port")!!.toInt() 
   val host = kv.get("host")!!.toString()
-  val root = Paths.get(kv.get("root")!!.toString())
+  val root = File(kv.get("root")!!.toString())
   val max_path = kv.get("max_path")!!.toInt()
   val directory_menus = kv.get("directory_menus")!!.toBoolean()
   val debug = kv.get("debug")!!.toBoolean()

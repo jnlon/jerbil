@@ -26,7 +26,6 @@ fun File.resolveLocalPath(path : String) : File {
   }
 }
 
-
 class GopherPath(path : String) {
   val raw = path
   val file = CONF.root.resolveLocalPath(path)

@@ -1,2 +1,3 @@
 - Gopher+ features
 - Header/Footer insertion for directory views
+- Make config loading less messy (something other than HashMap?)

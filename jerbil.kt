@@ -23,6 +23,8 @@ import java.util.ArrayList
 
 var CONF = loadDefaultConfig()
 
+fun debugln(s : String) = if (CONF.debug) println(s) else Unit
+
 fun charTypeOfSuffix(suffix : String) : Char {
 
   val archives = "z,7z,xz,gz,tar,lz,rar,bz2,apk,jar,lzma".split(",")
@@ -113,7 +115,7 @@ fun readPathString(reader : BufferedInputStream) : String {
 }
 
 fun readFromWriteTo(from : InputStream, to : OutputStream) : Unit {
-  val buf = ByteArray(2048,{0})
+  val buf = ByteArray(2048, {0})
   loop@ while (true) {
     val r = from.read(buf)
     when {
@@ -141,7 +143,7 @@ fun mainIO(sock : Socket) {
   val reader = sock.getInputStream().buffered()
   val writer = sock.getOutputStream().buffered()
   val rawPath = readPathString(reader)
-  val file : Optional<File> = pathToFile(rawPath) // TODO: Make this Optional?
+  val file : Optional<File> = pathToFile(rawPath)
 
   println(">>> $rawPath")
 
@@ -163,7 +165,7 @@ fun main(args: Array<String>) {
   val conffile = if (args.size > 1) args.get(1) else "jerbil.conf"
   CONF = loadConfigFromFile(File(conffile))
   println("Conffile: $conffile")
-  println(CONF.toString())
+  println(CONF)
 
   val listener = ServerSocket(CONF.port)
 

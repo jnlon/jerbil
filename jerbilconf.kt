@@ -12,6 +12,7 @@ fun loadDefaults() : HashMap<String, String> {
   kv.put("root", System.getProperty("user.dir"))
   kv.put("max_path", "1000")
   kv.put("directory_menus", "true")
+  kv.put("debug", "false")
   return kv
 }
 
@@ -39,15 +40,18 @@ class Config(kv : HashMap<String, String>) {
   val root = Paths.get(kv.get("root")!!.toString())
   val max_path = kv.get("max_path")!!.toInt()
   val directory_menus = kv.get("directory_menus")!!.toBoolean()
+  val debug = kv.get("debug")!!.toBoolean()
+  val _kv : HashMap<String, String> = kv
 
   override fun toString() : String {
+    val prefix = " > "
+    val entries = _kv.map{"${it.key}: ${it.value}"}
+    val confstr = entries.joinToString (
+          separator = "\n$prefix",
+          prefix = prefix
+      )
     return """
-       |Config 
-       | port = $port
-       | host = $host
-       | root = $root
-       | max_path = $max_path
-       | directory_menus = $directory_menus
-       |""".trimMargin()
+       |Config:
+       |$confstr """.trimMargin()
   }
-} 
+}

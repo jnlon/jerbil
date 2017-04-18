@@ -20,7 +20,6 @@ fun String.toBoolean() : Boolean =
 fun loadJerbilConfigFile(file : File) : JerbilConfig {
 
   val conf = JerbilConfig()  // Default values
-
   println("Config: Loading from ${file.getCanonicalPath()}")
 
   if (!file.exists()) {
@@ -28,30 +27,28 @@ fun loadJerbilConfigFile(file : File) : JerbilConfig {
     return conf
   }
 
-  val pairs = file.readLines().filter {
-    it.contains("=") && !it.trim().startsWith("#")
-  }.map {
-    val p = it.split("=").map{it.trim()}
-    Pair( p.get(0), p.get(1) )
-  }
+  val pairs = file.readLines()
+    .map { it.split("=").map{ it.trim() } }
+    .filter { it.size == 2 && !it.get(0).startsWith("#") }
+    .map { Pair( it.get(0), it.get(1)) }
 
-  pairs.forEach {
-    (left, right) -> 
-      try {
-        println("Config: Setting '$left' to '$right'")
-        when (left) {
-          "port" -> conf.port = right.toInt()
-          "host" -> conf.host = right
-          "root" -> conf.root = File(right)
-          "max_path" -> conf.max_path = right.toInt()
-          "directory_menus" -> conf.directory_menus = right.toBoolean()
-          "debug" -> conf.debug = right.toBoolean()
-          else -> println("Config: Key '$left' does not exist")
-        }
-      }
-      catch (e : Exception) {
-        println("Config: Cannot set '$left' to '$right': $e")
+  for ((left, right) in pairs) {
+    try {
+      when (left) {
+        "port" -> conf.port = right.toInt()
+        "host" -> conf.host = right
+        "root" -> conf.root = File(right)
+        "max_path" -> conf.max_path = right.toInt()
+        "directory_menus" -> conf.directory_menus = right.toBoolean()
+        "debug" -> conf.debug = right.toBoolean()
+        else -> throw Exception("Config: Key '$left' does not exist")
       }
     }
+    catch (e : Exception) {
+      println("Config: Cannot set '$left' to '$right': $e")
+      System.exit(1)
+    }
+  }
+
   return conf
 }

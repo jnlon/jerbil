@@ -71,7 +71,7 @@ fun dirToMenu(dir : File) : String {
   fun fileToLine(f : File) : String {
     val type = charTypeOfFile(f)
     val text = f.getName()
-    val path = f.relativeTo(CONF.root)
+    val path = "/${f.relativeTo(CONF.root)}"
     return "${type}${text}\t${path}\t${CONF.host}\t${CONF.port}\r\n"
   }
 
@@ -104,33 +104,21 @@ fun readGopherPath(reader : InputStream) : GopherPath {
   return GopherPath("")
 }
 
-fun pipeIO(from : InputStream, to : OutputStream) : Unit {
-  val buf = ByteArray(2048, {0})
-  loop@ while (true) {
-    val r = from.read(buf)
-    when {
-      r == -1 -> break@loop
-      else -> to.write(buf, 0, r)
-    }
-  }
+fun InputStream.copyToFlush(to : OutputStream) {
+  this.copyTo(to)
   to.flush()
 }
 
-fun writeString(writer: OutputStream, str : String) : Unit {
-  writer.write(str.toByteArray())
-  writer.flush()
-}
+fun writeString(writer: OutputStream, str : String) =
+  str.byteInputStream().copyToFlush(writer)
 
-fun writeFile(writer: OutputStream, file : File) : Unit {
-  val input = file.inputStream()
-  pipeIO(input, writer)
-  input.close()
-}
+fun writeFile(writer: OutputStream, file : File) =
+  file.inputStream().use{ it.copyToFlush(writer) }
 
-fun writeDirMenu(writer : OutputStream, file : File) : Unit =
+fun writeDirMenu(writer : OutputStream, file : File) =
   writeString(writer, dirToMenu(file))
 
-fun writeNotFound(writer : OutputStream) : Unit =
+fun writeNotFound(writer : OutputStream) =
   writeString(writer, notFound())
 
 ////// Main 
@@ -149,7 +137,6 @@ fun mainIO(sock : Socket) {
       path.isFile -> writeFile(writer, path.file)
       else -> writeNotFound(writer)
     }
-    sock.close()
   }
   catch (e : SocketException) {
     println("SocketException: ${sock.getInetAddress()}")
@@ -165,6 +152,6 @@ fun main(args: Array<String>) {
 
   while (true) {
     val sock = listener.accept()
-    thread(block = {-> mainIO(sock)})
+    thread(block = {-> sock.use{mainIO(it)}})
   }
 }

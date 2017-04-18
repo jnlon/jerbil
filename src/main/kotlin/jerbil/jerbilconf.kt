@@ -1,19 +1,16 @@
 package jerbil
 import java.io.File
 import java.net.InetAddress
-import java.nio.file.Paths
-import java.nio.file.Path
-import java.util.HashMap
 
 fun loadDefaults() : HashMap<String, String> {
-  val kv = HashMap<String, String>()
-  kv.put("port", "8000")
-  kv.put("host", InetAddress.getLocalHost().getHostName())
-  kv.put("root", System.getProperty("user.dir"))
-  kv.put("max_path", "1000")
-  kv.put("directory_menus", "true")
-  kv.put("debug", "false")
-  return kv
+  return hashMapOf (
+      "port" to "8000",
+      "host" to InetAddress.getLocalHost().getHostName(),
+      "root" to System.getProperty("user.dir"),
+      "max_path" to "1000",
+      "directory_menus" to "true",
+      "debug" to "false"
+  )
 }
 
 fun loadConfigFromFile(file : File) : Config {

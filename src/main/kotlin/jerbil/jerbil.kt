@@ -1,6 +1,7 @@
 package jerbil
 
-import jerbil.Config
+import jerbil.loadJerbilConfigFile
+import jerbil.JerbilConfig
 
 import java.net.ServerSocket
 import java.net.Socket
@@ -13,7 +14,7 @@ import java.util.ArrayList
 
 ////// Config
 
-var CONF = loadDefaultConfig()
+var CONF = JerbilConfig()
 
 ////// Paths
 
@@ -156,10 +157,9 @@ fun mainIO(sock : Socket) {
 }
 
 fun main(args: Array<String>) {
-  val conffile = if (args.size > 1) args.get(1) else "jerbil.conf"
-  CONF = loadConfigFromFile(File(conffile))
-  println("Conffile: $conffile")
-  println(CONF)
+  val cf = if (args.size > 1) args.get(1) else "jerbil.conf"
+  CONF = loadJerbilConfigFile(File(cf))
+  println("Config: $CONF ")
 
   val listener = ServerSocket(CONF.port)
 

@@ -61,24 +61,19 @@ fun charTypeOfFile(file : File) : Char {
   }
 }
 
-fun File.listFilesSorted() : List<File> {
-  val files = this.listFiles()?.toCollection(ArrayList()) ?: ArrayList<File>()
-  return files.sorted()
-}
-
 fun dirToMenu(dir : File) : String {
 
   fun fileToLine(f : File) : String {
     val type = charTypeOfFile(f)
     val text = f.getName()
-    val path = "/${f.relativeTo(CONF.root)}"
+    val path = "/" + f.relativeTo(CONF.root)
     return "${type}${text}\t${path}\t${CONF.host}\t${CONF.port}\r\n"
   }
 
   if (!CONF.directory_menus || !dir.isDirectory())
     return notFound()
 
-  val files = dir.listFilesSorted()
+  val files = dir.listFiles().sorted()
   val menu = files.map{fileToLine(it)}.joinToString(separator = "")
 
   println(menu)

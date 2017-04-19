@@ -1,21 +1,17 @@
-buildscript {
-    ext.kotlin_version = '1.1.1'
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
+plugins {
+  id "org.jetbrains.kotlin.jvm" version "1.1.1"
+  id "application"
 }
 
-apply plugin: "kotlin" // or apply plugin: "kotlin2js" if targeting JavaScript
-apply plugin: "application"
-mainClassName = "jerbil.JerbilKt"
+project.ext.kotlin_version = "1.1.1"
+project.mainClassName = "jerbil.JerbilKt"
+project.applicationName = "Jerbil"
+project.description = "A Gopher server"
 
 repositories {
-    mavenCentral()
+  mavenCentral()
 }
 
-dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+dependencies { 
+  compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }

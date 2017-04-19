@@ -11,6 +11,7 @@ import java.io.OutputStream
 import java.io.File
 import kotlin.concurrent.thread
 import java.util.ArrayList
+import java.nio.file.Files
 
 ////// Config
 
@@ -39,6 +40,9 @@ class GopherPath(path : String) {
 fun debugln(s : String) = if (CONF.debug) println(s) else Unit
 fun notFound() : String = "Resource not found\n"
 
+fun File.isText() : Boolean =
+  Files.probeContentType(this.toPath()).contains("text")
+
 fun charTypeOfFile(file : File) : Char {
   if (file.isDirectory()) return '1'
 
@@ -57,7 +61,10 @@ fun charTypeOfFile(file : File) : Char {
     in text -> '0'
     in html -> 'h'
     "gif" -> 'g'
-    else -> '9' // Assume binary file
+    else -> {
+      if (file.isText()) '0'
+      else '9'
+    }
   }
 }
 

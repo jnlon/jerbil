@@ -8,6 +8,10 @@ project.mainClassName = "jerbil.JerbilKt"
 project.applicationName = "Jerbil"
 project.description = "A Gopher server"
 
+task stop(type: Exec) {
+  commandLine 'pkill', '-f', "$mainClassName"
+}
+
 repositories {
   mavenCentral()
 }
